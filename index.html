@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>술값 N빵 계산기</title>
+<link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --amber:#F5A623;--amber-light:#FFD27F;
+  --bg:#0D0A06;--card:rgba(255,255,255,0.04);
+  --border:rgba(245,166,35,0.25);--text:#F5EDD8;
+  --muted:rgba(245,237,216,0.5);--green:#4CAF50;--red:#E57373;
+}
+html,body{min-height:100vh;font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text);overflow-x:hidden}
+body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
+  background:radial-gradient(ellipse 80% 60% at 15% 10%,rgba(245,166,35,0.12) 0%,transparent 60%),
+             radial-gradient(ellipse 60% 50% at 85% 80%,rgba(180,90,10,0.15) 0%,transparent 60%)}
+.bubbles{position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden}
+.bubble{position:absolute;bottom:-80px;border-radius:50%;
+  background:radial-gradient(circle at 35% 35%,rgba(245,166,35,0.35),rgba(245,166,35,0.05));
+  border:1px solid rgba(245,166,35,0.2);animation:rise linear infinite}
+@keyframes rise{0%{transform:translateY(0);opacity:0}10%{opacity:1}90%{opacity:.4}100%{transform:translateY(-110vh) translateX(20px);opacity:0}}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+.wrap{position:relative;z-index:1;max-width:700px;margin:0 auto;padding:3rem 1.25rem 4rem}
+header{text-align:center;margin-bottom:2.5rem}
+.logo{font-size:3rem;display:block;margin-bottom:.5rem;filter:drop-shadow(0 0 18px rgba(245,166,35,.6));animation:float 3s ease-in-out infinite}
+h1{font-family:'Black Han Sans',sans-serif;font-size:clamp(1.8rem,5vw,2.6rem);
+  background:linear-gradient(135deg,var(--amber-light),var(--amber));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;line-height:1.2}
+.byline{font-family:'Noto Sans KR',sans-serif;font-size:clamp(.85rem,2vw,1.05rem);
+  font-weight:400;color:rgba(245,166,35,.55);-webkit-text-fill-color:rgba(245,166,35,.55)}
+.subtitle{margin-top:.6rem;font-size:.9rem;color:var(--muted);font-weight:300}
+.card{background:var(--card);border:1px solid var(--border);border-radius:20px;padding:1.5rem;margin-bottom:1rem;backdrop-filter:blur(12px)}
+.card-title{font-size:.78rem;font-weight:500;text-transform:uppercase;letter-spacing:.12em;color:var(--amber);margin-bottom:1rem;display:flex;align-items:center;gap:8px}
+.card-title::after{content:'';flex:1;height:1px;background:var(--border)}
+.col-hd{display:grid;grid-template-columns:1fr 95px 80px 80px;gap:6px;margin-bottom:6px;padding:0 2px}
+.col-hd span{font-size:.7rem;color:var(--muted)}
+.irow{display:grid;grid-template-columns:1fr 95px 80px 80px;gap:6px;margin-bottom:7px;align-items:center}
+.irow input{background:rgba(255,255,255,.06);border:1px solid rgba(245,166,35,.2);border-radius:10px;
+  color:var(--text);font-family:'Noto Sans KR',sans-serif;font-size:.88rem;
+  padding:.5rem .65rem;outline:none;width:100%;-moz-appearance:textfield}
+.irow input::-webkit-inner-spin-button,.irow input::-webkit-outer-spin-button{-webkit-appearance:none}
+.irow input:focus{border-color:var(--amber);background:rgba(245,166,35,.08)}
+.irow input::placeholder{color:rgba(245,237,216,.18)}
+.irow .subtotal{background:rgba(245,166,35,.07);border:1px solid rgba(245,166,35,.15);
+  border-radius:10px;color:var(--amber);font-size:.85rem;font-weight:500;
+  padding:.5rem .65rem;text-align:right;min-width:0}
+.total-row{display:flex;justify-content:flex-end;align-items:center;gap:10px;
+  margin-top:10px;padding-top:10px;border-top:1px solid var(--border);font-size:.85rem}
+.total-label{color:var(--muted)}
+.total-val{font-family:'Black Han Sans',sans-serif;font-size:1.1rem;color:var(--amber)}
+.pgrid{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:10px}
+.field{display:flex;flex-direction:column;gap:6px}
+.field label{font-size:.73rem;color:var(--muted)}
+.field input{background:rgba(255,255,255,.06);border:1px solid rgba(245,166,35,.2);border-radius:10px;
+  color:var(--text);font-family:'Noto Sans KR',sans-serif;font-size:1rem;font-weight:500;
+  padding:.65rem .9rem;outline:none;width:100%;-moz-appearance:textfield}
+.field input::-webkit-inner-spin-button,.field input::-webkit-outer-spin-button{-webkit-appearance:none}
+.field input:focus{border-color:var(--amber);background:rgba(245,166,35,.08)}
+.field input::placeholder{color:rgba(245,237,216,.2);font-weight:300}
+.field input[readonly]{background:rgba(245,166,35,.06);border-color:rgba(245,166,35,.15);color:var(--amber);cursor:default}
+#resultArea{display:none}
+.rgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:1.2rem}
+.rtile{background:rgba(245,166,35,.08);border:1px solid rgba(245,166,35,.3);border-radius:14px;padding:1rem;text-align:center}
+.rtile-emoji{font-size:1.4rem;margin-bottom:4px}
+.rtile-label{font-size:.72rem;color:var(--muted);margin-bottom:6px;line-height:1.4}
+.rtile-amt{font-family:'Black Han Sans',sans-serif;font-size:1.4rem;color:var(--amber)}
+.rtile-sub{font-size:.68rem;color:var(--muted);margin-top:3px}
+.summary{border-top:1px solid var(--border);padding-top:1rem}
+.srow{display:flex;justify-content:space-between;font-size:.83rem;padding:5px 0;border-bottom:1px solid rgba(245,166,35,.08);color:var(--muted)}
+.srow:last-child{border-bottom:none;color:var(--text);font-weight:500}
+.srow span:last-child{color:var(--text)}
+.ok{color:var(--green)!important}
+#errArea{display:none;background:rgba(229,115,115,.1);border:1px solid rgba(229,115,115,.3);
+  border-radius:12px;padding:.9rem 1.1rem;font-size:.85rem;color:var(--red);margin-top:.5rem}
+.tag{display:inline-block;font-size:.65rem;background:rgba(76,175,80,.15);color:var(--green);
+  border:1px solid rgba(76,175,80,.3);border-radius:100px;padding:2px 10px;margin-left:8px;vertical-align:middle}
+footer{text-align:center;margin-top:2.5rem;font-size:.73rem;color:rgba(245,237,216,.25)}
+@media(max-width:500px){
+  .pgrid{grid-template-columns:1fr 1fr}
+  .col-hd{grid-template-columns:1fr 80px 65px 65px}
+  .irow{grid-template-columns:1fr 80px 65px 65px}
+}
+@media(max-width:380px){
+  .col-hd{grid-template-columns:1fr 70px 58px 58px}
+  .irow{grid-template-columns:1fr 70px 58px 58px}
+}
+</style>
+</head>
+<body>
+<div class="bubbles" id="bubbles"></div>
+<div class="wrap">
+  <header>
+    <span class="logo">🍺</span>
+    <h1>술값 공평 N빵 <span class="byline">by. 김유찬</span></h1>
+    <p class="subtitle">술 안 마신 친구도 억울하지 않게 · 공정하게 정산해요</p>
+  </header>
+
+  <!-- 술 -->
+  <div class="card">
+    <p class="card-title">🍺 술 목록</p>
+    <div class="col-hd"><span>주종</span><span>단가 (원)</span><span>수량</span><span>소계</span></div>
+    <div class="irow">
+      <input type="text" id="dn0" placeholder="예: 소주" oninput="calc()">
+      <input type="number" id="dp0" placeholder="4500" min="0" oninput="calcRow('d',0);calc()">
+      <input type="number" id="dq0" placeholder="병" min="0" oninput="calcRow('d',0);calc()">
+      <div class="subtotal" id="ds0">0원</div>
+    </div>
+    <div class="irow">
+      <input type="text" id="dn1" placeholder="예: 맥주" oninput="calc()">
+      <input type="number" id="dp1" placeholder="6000" min="0" oninput="calcRow('d',1);calc()">
+      <input type="number" id="dq1" placeholder="캔" min="0" oninput="calcRow('d',1);calc()">
+      <div class="subtotal" id="ds1">0원</div>
+    </div>
+    <div class="irow">
+      <input type="text" id="dn2" placeholder="예: 막걸리" oninput="calc()">
+      <input type="number" id="dp2" placeholder="" min="0" oninput="calcRow('d',2);calc()">
+      <input type="number" id="dq2" placeholder="" min="0" oninput="calcRow('d',2);calc()">
+      <div class="subtotal" id="ds2">0원</div>
+    </div>
+    <div class="irow">
+      <input type="text" id="dn3" placeholder="예: 양주" oninput="calc()">
+      <input type="number" id="dp3" placeholder="" min="0" oninput="calcRow('d',3);calc()">
+      <input type="number" id="dq3" placeholder="" min="0" oninput="calcRow('d',3);calc()">
+      <div class="subtotal" id="ds3">0원</div>
+    </div>
+    <div class="irow">
+      <input type="text" id="dn4" placeholder="기타" oninput="calc()">
+      <input type="number" id="dp4" placeholder="" min="0" oninput="calcRow('d',4);calc()">
+      <input type="number" id="dq4" placeholder="" min="0" oninput="calcRow('d',4);calc()">
+      <div class="subtotal" id="ds4">0원</div>
+    </div>
+    <div class="total-row"><span class="total-label">술값 합계</span><span class="total-val" id="dTotal">0원</span></div>
+  </div>
+
+  <!-- 안주 -->
+  <div class="card">
+    <p class="card-title">🍗 안주 목록</p>
+    <div class="col-hd"><span>안주명</span><span>단가 (원)</span><span>수량</span><span>소계</span></div>
+    <div class="irow">
+      <input type="text" id="sn0" placeholder="예: 치킨" oninput="calc()">
+      <input type="number" id="sp0" placeholder="20000" min="0" oninput="calcRow('s',0);calc()">
+      <input type="number" id="sq0" placeholder="개" min="0" oninput="calcRow('s',0);calc()">
+      <div class="subtotal" id="ss0">0원</div>
+    </div>
+    <div class="irow">
+      <input type="text" id="sn1" placeholder="예: 곱창" oninput="calc()">
+      <input type="number" id="sp1" placeholder="35000" min="0" oninput="calcRow('s',1);calc()">
+      <input type="number" id="sq1" placeholder="인분" min="0" oninput="calcRow('s',1);calc()">
+      <div class="subtotal" id="ss1">0원</div>
+    </div>
+    <div class="irow">
+      <input type="text" id="sn2" placeholder="예: 감자튀김" oninput="calc()">
+      <input type="number" id="sp2" placeholder="" min="0" oninput="calcRow('s',2);calc()">
+      <input type="number" id="sq2" placeholder="" min="0" oninput="calcRow('s',2);calc()">
+      <div class="subtotal" id="ss2">0원</div>
+    </div>
+    <div class="irow">
+      <input type="text" id="sn3" placeholder="예: 피자" oninput="calc()">
+      <input type="number" id="sp3" placeholder="" min="0" oninput="calcRow('s',3);calc()">
+      <input type="number" id="sq3" placeholder="" min="0" oninput="calcRow('s',3);calc()">
+      <div class="subtotal" id="ss3">0원</div>
+    </div>
+    <div class="irow">
+      <input type="text" id="sn4" placeholder="기타" oninput="calc()">
+      <input type="number" id="sp4" placeholder="" min="0" oninput="calcRow('s',4);calc()">
+      <input type="number" id="sq4" placeholder="" min="0" oninput="calcRow('s',4);calc()">
+      <div class="subtotal" id="ss4">0원</div>
+    </div>
+    <div class="total-row"><span class="total-label">안주값 합계</span><span class="total-val" id="sTotal">0원</span></div>
+  </div>
+
+  <!-- 인원 -->
+  <div class="card">
+    <p class="card-title">👥 인원 구성</p>
+    <div class="pgrid">
+      <div class="field"><label>🍺🍗 술+안주</label><input type="number" id="both" placeholder="명" min="0" oninput="syncCalc()"></div>
+      <div class="field"><label>🍺 술만</label><input type="number" id="donly" placeholder="명" min="0" oninput="syncCalc()"></div>
+      <div class="field"><label>🍗 안주만</label><input type="number" id="sonly" placeholder="명" min="0" oninput="syncCalc()"></div>
+      <div class="field"><label>총 인원</label><input type="number" id="total" readonly placeholder="자동"></div>
+    </div>
+  </div>
+
+  <!-- 결과 -->
+  <div id="resultArea">
+    <div class="card">
+      <p class="card-title">🧾 정산 결과 <span class="tag">공평 분배</span></p>
+      <div class="rgrid" id="rgrid"></div>
+      <div class="summary" id="summary"></div>
+    </div>
+  </div>
+  <div id="errArea"></div>
+
+  <footer>
+    술 한 잔의 행복, 계산은 공평하게 🥂
+    <div style="margin-top:.6rem;font-size:.8rem;color:rgba(245,166,35,.45)">Made by. 김유찬</div>
+  </footer>
+</div>
+
+<script>
+/* 거품 */
+(function(){
+  var c=document.getElementById('bubbles');
+  for(var i=0;i<18;i++){
+    var b=document.createElement('div');
+    b.className='bubble';
+    var sz=8+Math.random()*30;
+    b.style.width=sz+'px';b.style.height=sz+'px';
+    b.style.left=Math.random()*100+'%';
+    b.style.animationDuration=(6+Math.random()*10)+'s';
+    b.style.animationDelay=Math.random()*8+'s';
+    c.appendChild(b);
+  }
+}());
+
+function fmt(n){return Math.round(n).toLocaleString('ko-KR')+'원';}
+
+function val(id){return parseFloat(document.getElementById(id).value)||0;}
+
+function setText(id,txt){
+  var el=document.getElementById(id);
+  if(el) el.textContent=txt;
+}
+
+/* 행 소계 */
+function calcRow(type,i){
+  var p=val(type+'p'+i);
+  var q=val(type+'q'+i);
+  setText(type+'s'+i, fmt(p*q));
+}
+
+/* 전체 계산 */
+function calc(){
+  /* 술 */
+  var dCost=0;
+  for(var i=0;i<5;i++){
+    var t=val('dp'+i)*val('dq'+i);
+    setText('ds'+i,fmt(t));
+    dCost+=t;
+  }
+  setText('dTotal',fmt(dCost));
+
+  /* 안주 */
+  var sCost=0;
+  for(var i=0;i<5;i++){
+    var t=val('sp'+i)*val('sq'+i);
+    setText('ss'+i,fmt(t));
+    sCost+=t;
+  }
+  setText('sTotal',fmt(sCost));
+
+  var total=dCost+sCost;
+  var both=val('both');
+  var donly=val('donly');
+  var sonly=val('sonly');
+  var totalP=both+donly+sonly;
+
+  var ra=document.getElementById('resultArea');
+  var ea=document.getElementById('errArea');
+
+  if(!totalP||!total){ra.style.display='none';ea.style.display='none';return;}
+
+  var drinkers=both+donly;
+  var snackers=both+sonly;
+
+  if(drinkers===0&&dCost>0){showErr('⚠️ 술값이 있는데 술 마신 사람이 없어요.');return;}
+  if(snackers===0&&sCost>0){showErr('⚠️ 안주값이 있는데 안주 먹은 사람이 없어요.');return;}
+  ea.style.display='none';
+
+  var dpp=drinkers>0?dCost/drinkers:0;
+  var spp=snackers>0?sCost/snackers:0;
+  var bothPay=dpp+spp;
+  var donlyPay=dpp;
+  var sonlyPay=spp;
+
+  var grid=document.getElementById('rgrid');
+  grid.innerHTML='';
+  var items=[];
+  if(both>0)  items.push({e:'🍺🍗',l:'술 & 안주<br>다 먹은 사람',v:bothPay,c:both});
+  if(donly>0) items.push({e:'🍺',  l:'술만<br>마신 사람',       v:donlyPay,c:donly});
+  if(sonly>0) items.push({e:'🍗',  l:'안주만<br>먹은 사람',      v:sonlyPay,c:sonly});
+
+  for(var i=0;i<items.length;i++){
+    var it=items[i];
+    var d=document.createElement('div');
+    d.className='rtile';
+    d.innerHTML='<div class="rtile-emoji">'+it.e+'</div>'
+      +'<div class="rtile-label">'+it.l+'</div>'
+      +'<div class="rtile-amt">'+fmt(it.v)+'</div>'
+      +'<div class="rtile-sub">'+it.c+'명 합계 '+fmt(it.v*it.c)+'</div>';
+    grid.appendChild(d);
+  }
+
+  /* 내역 */
+  var rows='';
+  for(var i=0;i<5;i++){
+    var t=val('dp'+i)*val('dq'+i);
+    var nm=document.getElementById('dn'+i).value||'주류'+(i+1);
+    if(t>0) rows+='<div class="srow"><span>🍺 '+nm+'</span><span>'+fmt(t)+'</span></div>';
+  }
+  for(var i=0;i<5;i++){
+    var t=val('sp'+i)*val('sq'+i);
+    var nm=document.getElementById('sn'+i).value||'안주'+(i+1);
+    if(t>0) rows+='<div class="srow"><span>🍗 '+nm+'</span><span>'+fmt(t)+'</span></div>';
+  }
+
+  var verify=both*bothPay+donly*donlyPay+sonly*sonlyPay;
+  var ok=Math.abs(verify-total)<1;
+  rows+='<div class="srow" style="margin-top:6px"><span>술값 소계 ('+drinkers+'명 분담)</span><span>'+fmt(dCost)+'</span></div>';
+  rows+='<div class="srow"><span>안주값 소계 ('+snackers+'명 분담)</span><span>'+fmt(sCost)+'</span></div>';
+  rows+='<div class="srow"><span>총합계</span><span>'+fmt(total)+'</span></div>';
+  rows+='<div class="srow"><span>검증 합계</span><span class="'+(ok?'ok':'')+'">'
+       +fmt(verify)+' '+(ok?'✓ 맞아요':'⚠ 확인 필요')+'</span></div>';
+  document.getElementById('summary').innerHTML=rows;
+  ra.style.display='block';
+}
+
+function syncCalc(){
+  var b=val('both'),d=val('donly'),s=val('sonly');
+  var el=document.getElementById('total');
+  el.value=(b+d+s)||'';
+  calc();
+}
+
+function showErr(msg){
+  document.getElementById('resultArea').style.display='none';
+  var e=document.getElementById('errArea');
+  e.textContent=msg;e.style.display='block';
+}
+</script>
+</body>
+</html>
